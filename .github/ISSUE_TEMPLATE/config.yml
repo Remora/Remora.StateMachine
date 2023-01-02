@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Discord Server
+    url: https://discord.gg/dyYmwashVs
+    about: Need help with the library? Talk to us in our Discord server.
+  - name: Feedback & Feature Requests
+    url: https://github.com/Remora/Remora.StateMachine/issues
+    about: Have feedback, bug reports, or feature requests? Head over to the Github repo.
