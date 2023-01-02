@@ -4,11 +4,12 @@
 //  SPDX-License-Identifier: LGPL-3.0-or-later
 //
 
-using System;
 using System.Threading;
 using System.Threading.Tasks;
 using Remora.Results;
 using Remora.StateMachine.Tests.States;
+
+#pragma warning disable CS1591
 
 namespace Remora.StateMachine.Tests.Graphs.Erroring;
 

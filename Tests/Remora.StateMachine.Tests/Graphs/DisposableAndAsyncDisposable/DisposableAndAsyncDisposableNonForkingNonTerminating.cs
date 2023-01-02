@@ -11,6 +11,8 @@ using Remora.Results;
 using Remora.StateMachine.Tests.Extensions;
 using Remora.StateMachine.Tests.States;
 
+#pragma warning disable CS1591
+
 namespace Remora.StateMachine.Tests.Graphs.DisposableAndAsyncDisposable;
 
 /// <summary>

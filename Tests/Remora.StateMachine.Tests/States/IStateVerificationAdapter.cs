@@ -4,7 +4,6 @@
 //  SPDX-License-Identifier: LGPL-3.0-or-later
 //
 
-using System;
 using Remora.Results;
 
 namespace Remora.StateMachine.Tests.States;

@@ -10,6 +10,8 @@ using System.Threading.Tasks;
 using Remora.Results;
 using Remora.StateMachine.Tests.States;
 
+#pragma warning disable CS1591
+
 namespace Remora.StateMachine.Tests.Graphs.Disposable;
 
 /// <summary>
@@ -33,7 +35,7 @@ public static class DisposableForkingSelfTerminating
             async Task TransitTask()
             {
                 await Task.Yield();
-                await Task.Delay(TimeSpan.FromSeconds(1));
+                await Task.Delay(TimeSpan.FromSeconds(1), ct);
 
                 this.Controller.RequestTransit<B>();
             }
@@ -85,7 +87,7 @@ public static class DisposableForkingSelfTerminating
             async Task ExitTask()
             {
                 await Task.Yield();
-                await Task.Delay(TimeSpan.FromSeconds(1));
+                await Task.Delay(TimeSpan.FromSeconds(1), ct);
 
                 this.Controller.RequestExit();
             }

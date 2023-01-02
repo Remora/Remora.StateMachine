@@ -13,9 +13,6 @@
         <PackageOutputPath>$(MSBuildThisFileDirectory)nuget</PackageOutputPath>
         <PackageProjectUrl>https://github.com/Remora/Remora.StateMachine</PackageProjectUrl>
         <PackageTags>remora;state-machine;http;json;api;</PackageTags>
-        <BaseDescription>
-            Finite-state machines for C#.
-        </BaseDescription>
     </PropertyGroup>
 
     <ItemGroup>

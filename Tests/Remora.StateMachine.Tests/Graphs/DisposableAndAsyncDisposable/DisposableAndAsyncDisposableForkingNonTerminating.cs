@@ -11,6 +11,8 @@ using Remora.Results;
 using Remora.StateMachine.Tests.Extensions;
 using Remora.StateMachine.Tests.States;
 
+#pragma warning disable CS1591
+
 namespace Remora.StateMachine.Tests.Graphs.DisposableAndAsyncDisposable;
 
 /// <summary>
@@ -34,7 +36,7 @@ public static class DisposableAndAsyncDisposableForkingNonTerminating
             async Task TransitTask()
             {
                 await Task.Yield();
-                await Task.Delay(TimeSpan.FromSeconds(1));
+                await Task.Delay(TimeSpan.FromSeconds(1), ct);
 
                 this.Controller.RequestTransit<B>();
             }
