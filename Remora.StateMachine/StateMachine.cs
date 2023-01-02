@@ -161,6 +161,7 @@ public sealed class StateMachine : IStateMachine, IStateMachineController
                 : Result<IState>.FromError(createNext);
         }
 
+        // ReSharper disable once SuspiciousTypeConversion.Global
         if (_currentState is not ITransition<TState> transition)
         {
             throw new InvalidOperationException($"The current state cannot transition to {typeof(TState).Name}");
@@ -190,11 +191,13 @@ public sealed class StateMachine : IStateMachine, IStateMachineController
     /// <typeparam name="TState">The type of the state.</typeparam>
     private static async ValueTask DisposeIfRequired<TState>(TState state) where TState : IState
     {
+        // ReSharper disable once SuspiciousTypeConversion.Global
         if (state is IAsyncDisposable asyncDisposable)
         {
             await asyncDisposable.DisposeAsync();
         }
 
+        // ReSharper disable once SuspiciousTypeConversion.Global
         if (state is IDisposable disposable)
         {
             disposable.Dispose();
