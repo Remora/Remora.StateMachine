@@ -128,10 +128,6 @@ public sealed class StateMachine : IStateMachine, IStateMachineController
                 }
             }
         }
-        catch (OperationCanceledException)
-        {
-            // cancellation is fine
-        }
         finally
         {
             // Canceled or graceful exit
