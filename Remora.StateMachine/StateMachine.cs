@@ -103,11 +103,16 @@ public sealed class StateMachine : IStateMachine, IStateMachineController
                             return enterNext;
                         }
                     }
-                    catch (OperationCanceledException)
+                    catch (Exception ex)
                     {
-                        // next may dangle unless disposed here should either of the above throw
+                        // next may dangle unless disposed here if either of the above throw
                         // _currentState is taken care of in the outer code
                         await DisposeIfRequired(next);
+
+                        if (ex is not OperationCanceledException)
+                        {
+                            throw;
+                        }
                     }
 
                     await DisposeIfRequired(_currentState);
