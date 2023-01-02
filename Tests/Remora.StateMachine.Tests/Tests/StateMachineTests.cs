@@ -8,6 +8,7 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 using Moq;
+using Remora.StateMachine.Tests.Graphs.AsyncDisposable;
 using Remora.StateMachine.Tests.Graphs.Broken;
 using Remora.StateMachine.Tests.Graphs.Disposable;
 using Remora.StateMachine.Tests.Graphs.Erroring;
@@ -1215,6 +1216,471 @@ public static class StateMachineTests
             adapterMock.Verify(m => m.EnterAsync<DisposableErrorReturningInTransition.B>(), Times.Never);
             adapterMock.Verify(m => m.ExitAsync<DisposableErrorReturningInTransition.B>(), Times.Never);
             adapterMock.Verify(m => m.Dispose<DisposableErrorReturningInTransition.B>(), Times.Never);
+        }
+    }
+
+    /// <summary>
+    /// Tests the <see cref="StateMachine.RunAsync{TState}(TState,CancellationToken)"/> method's asynchronous disposal
+    /// handling.
+    /// </summary>
+    public static class AsyncDisposal
+    {
+        /// <summary>
+        /// Tests whether states are disposed of correctly in the ideal happy-path cases.
+        /// </summary>
+        /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+        [Fact]
+        public static async Task DisposesStatesCorrectlyForNonForkingSelfTerminatingGraph()
+        {
+            var machine = new StateMachine();
+
+            var callSequence = new MockSequence();
+            var adapterMock = new Mock<IStateVerificationAdapter>();
+            adapterMock.InSequence(callSequence).Setup(m => m.EnterAsync<AsyncDisposableNonForkingSelfTerminating.A>());
+            adapterMock.InSequence(callSequence).Setup(m => m.TransitAsync<AsyncDisposableNonForkingSelfTerminating.A, AsyncDisposableNonForkingSelfTerminating.B>());
+            adapterMock.InSequence(callSequence).Setup(m => m.ExitAsync<AsyncDisposableNonForkingSelfTerminating.A>());
+            adapterMock.InSequence(callSequence).Setup(m => m.DisposeAsync<AsyncDisposableNonForkingSelfTerminating.A>());
+            adapterMock.InSequence(callSequence).Setup(m => m.EnterAsync<AsyncDisposableNonForkingSelfTerminating.B>());
+            adapterMock.InSequence(callSequence).Setup(m => m.ExitAsync<AsyncDisposableNonForkingSelfTerminating.B>());
+            adapterMock.InSequence(callSequence).Setup(m => m.DisposeAsync<AsyncDisposableNonForkingSelfTerminating.B>());
+
+            var initialState = new AsyncDisposableNonForkingSelfTerminating.A(adapterMock.Object) { Controller = machine };
+
+            var result = await machine.RunAsync(initialState);
+            Assert.True(result.IsSuccess);
+
+            adapterMock.Verify(m => m.EnterAsync<AsyncDisposableNonForkingSelfTerminating.A>(), Times.Once);
+            adapterMock.Verify(m => m.TransitAsync<AsyncDisposableNonForkingSelfTerminating.A, AsyncDisposableNonForkingSelfTerminating.B>(), Times.Once);
+            adapterMock.Verify(m => m.ExitAsync<AsyncDisposableNonForkingSelfTerminating.A>(), Times.Once);
+            adapterMock.Verify(m => m.DisposeAsync<AsyncDisposableNonForkingSelfTerminating.A>(), Times.Once);
+            adapterMock.Verify(m => m.EnterAsync<AsyncDisposableNonForkingSelfTerminating.B>(), Times.Once);
+            adapterMock.Verify(m => m.ExitAsync<AsyncDisposableNonForkingSelfTerminating.B>(), Times.Once);
+            adapterMock.Verify(m => m.DisposeAsync<AsyncDisposableNonForkingSelfTerminating.B>(), Times.Once);
+        }
+
+        /// <summary>
+        /// Tests whether states are disposed of correctly in the ideal happy-path cases.
+        /// </summary>
+        /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+        [Fact]
+        public static async Task DisposesStatesCorrectlyForNonForkingNonTerminatingGraph()
+        {
+            var machine = new StateMachine();
+
+            var callSequence = new MockSequence();
+            var adapterMock = new Mock<IStateVerificationAdapter>();
+            adapterMock.InSequence(callSequence).Setup(m => m.EnterAsync<AsyncDisposableNonForkingNonTerminating.A>());
+            adapterMock.InSequence(callSequence).Setup(m => m.TransitAsync<AsyncDisposableNonForkingNonTerminating.A, AsyncDisposableNonForkingNonTerminating.B>());
+            adapterMock.InSequence(callSequence).Setup(m => m.ExitAsync<AsyncDisposableNonForkingNonTerminating.A>());
+            adapterMock.InSequence(callSequence).Setup(m => m.DisposeAsync<AsyncDisposableNonForkingNonTerminating.A>());
+            adapterMock.InSequence(callSequence).Setup(m => m.EnterAsync<AsyncDisposableNonForkingNonTerminating.B>());
+            adapterMock.InSequence(callSequence).Setup(m => m.ExitAsync<AsyncDisposableNonForkingNonTerminating.B>());
+            adapterMock.InSequence(callSequence).Setup(m => m.DisposeAsync<AsyncDisposableNonForkingNonTerminating.B>());
+
+            var tokenSource = new CancellationTokenSource();
+            tokenSource.Cancel();
+
+            var initialState = new AsyncDisposableNonForkingNonTerminating.A(adapterMock.Object, tokenSource.Token) { Controller = machine };
+
+            var result = await machine.RunAsync(initialState, CancellationToken.None);
+            Assert.True(result.IsSuccess);
+
+            adapterMock.Verify(m => m.EnterAsync<AsyncDisposableNonForkingNonTerminating.A>(), Times.Once);
+            adapterMock.Verify(m => m.TransitAsync<AsyncDisposableNonForkingNonTerminating.A, AsyncDisposableNonForkingNonTerminating.B>(), Times.Once);
+            adapterMock.Verify(m => m.ExitAsync<AsyncDisposableNonForkingNonTerminating.A>(), Times.Once);
+            adapterMock.Verify(m => m.DisposeAsync<AsyncDisposableNonForkingNonTerminating.A>(), Times.Once);
+            adapterMock.Verify(m => m.EnterAsync<AsyncDisposableNonForkingNonTerminating.B>(), Times.Once);
+            adapterMock.Verify(m => m.ExitAsync<AsyncDisposableNonForkingNonTerminating.B>(), Times.Once);
+            adapterMock.Verify(m => m.DisposeAsync<AsyncDisposableNonForkingNonTerminating.B>(), Times.Once);
+        }
+
+        /// <summary>
+        /// Tests whether states are disposed of correctly in the ideal happy-path cases.
+        /// </summary>
+        /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+        [Fact]
+        public static async Task DisposesStatesCorrectlyForForkingSelfTerminatingGraph()
+        {
+            var machine = new StateMachine();
+
+            var callSequence = new MockSequence();
+            var adapterMock = new Mock<IStateVerificationAdapter>();
+            adapterMock.InSequence(callSequence).Setup(m => m.EnterAsync<AsyncDisposableForkingSelfTerminating.A>());
+            adapterMock.InSequence(callSequence).Setup(m => m.TransitAsync<AsyncDisposableForkingSelfTerminating.A, AsyncDisposableForkingSelfTerminating.B>());
+            adapterMock.InSequence(callSequence).Setup(m => m.ExitAsync<AsyncDisposableForkingSelfTerminating.A>());
+            adapterMock.InSequence(callSequence).Setup(m => m.DisposeAsync<AsyncDisposableForkingSelfTerminating.A>());
+            adapterMock.InSequence(callSequence).Setup(m => m.EnterAsync<AsyncDisposableForkingSelfTerminating.B>());
+            adapterMock.InSequence(callSequence).Setup(m => m.ExitAsync<AsyncDisposableForkingSelfTerminating.B>());
+            adapterMock.InSequence(callSequence).Setup(m => m.DisposeAsync<AsyncDisposableForkingSelfTerminating.B>());
+
+            var initialState = new AsyncDisposableForkingSelfTerminating.A(adapterMock.Object) { Controller = machine };
+
+            var result = await machine.RunAsync(initialState);
+            Assert.True(result.IsSuccess);
+
+            adapterMock.Verify(m => m.EnterAsync<AsyncDisposableForkingSelfTerminating.A>(), Times.Once);
+            adapterMock.Verify(m => m.TransitAsync<AsyncDisposableForkingSelfTerminating.A, AsyncDisposableForkingSelfTerminating.B>(), Times.Once);
+            adapterMock.Verify(m => m.ExitAsync<AsyncDisposableForkingSelfTerminating.A>(), Times.Once);
+            adapterMock.Verify(m => m.DisposeAsync<AsyncDisposableForkingSelfTerminating.A>(), Times.Once);
+            adapterMock.Verify(m => m.EnterAsync<AsyncDisposableForkingSelfTerminating.B>(), Times.Once);
+            adapterMock.Verify(m => m.ExitAsync<AsyncDisposableForkingSelfTerminating.B>(), Times.Once);
+            adapterMock.Verify(m => m.DisposeAsync<AsyncDisposableForkingSelfTerminating.B>(), Times.Once);
+        }
+
+        /// <summary>
+        /// Tests whether states are disposed of correctly in the ideal happy-path cases.
+        /// </summary>
+        /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+        [Fact]
+        public static async Task DisposesStatesCorrectlyForForkingNonTerminatingGraph()
+        {
+            var machine = new StateMachine();
+
+            var callSequence = new MockSequence();
+            var adapterMock = new Mock<IStateVerificationAdapter>();
+            adapterMock.InSequence(callSequence).Setup(m => m.EnterAsync<AsyncDisposableForkingNonTerminating.A>());
+            adapterMock.InSequence(callSequence).Setup(m => m.TransitAsync<AsyncDisposableForkingNonTerminating.A, AsyncDisposableForkingNonTerminating.B>());
+            adapterMock.InSequence(callSequence).Setup(m => m.ExitAsync<AsyncDisposableForkingNonTerminating.A>());
+            adapterMock.InSequence(callSequence).Setup(m => m.DisposeAsync<AsyncDisposableForkingNonTerminating.A>());
+            adapterMock.InSequence(callSequence).Setup(m => m.EnterAsync<AsyncDisposableForkingNonTerminating.B>());
+            adapterMock.InSequence(callSequence).Setup(m => m.ExitAsync<AsyncDisposableForkingNonTerminating.B>());
+            adapterMock.InSequence(callSequence).Setup(m => m.DisposeAsync<AsyncDisposableForkingNonTerminating.B>());
+
+            var tokenSource = new CancellationTokenSource();
+            tokenSource.Cancel();
+
+            var initialState = new AsyncDisposableForkingNonTerminating.A(adapterMock.Object, tokenSource.Token) { Controller = machine };
+
+            var result = await machine.RunAsync(initialState, CancellationToken.None);
+            Assert.True(result.IsSuccess);
+
+            adapterMock.Verify(m => m.EnterAsync<AsyncDisposableForkingNonTerminating.A>(), Times.Once);
+            adapterMock.Verify(m => m.TransitAsync<AsyncDisposableForkingNonTerminating.A, AsyncDisposableForkingNonTerminating.B>(), Times.Once);
+            adapterMock.Verify(m => m.ExitAsync<AsyncDisposableForkingNonTerminating.A>(), Times.Once);
+            adapterMock.Verify(m => m.DisposeAsync<AsyncDisposableForkingNonTerminating.A>(), Times.Once);
+            adapterMock.Verify(m => m.EnterAsync<AsyncDisposableForkingNonTerminating.B>(), Times.Once);
+            adapterMock.Verify(m => m.ExitAsync<AsyncDisposableForkingNonTerminating.B>(), Times.Once);
+            adapterMock.Verify(m => m.DisposeAsync<AsyncDisposableForkingNonTerminating.B>(), Times.Once);
+        }
+
+        /// <summary>
+        /// Tests whether states are disposed of correctly for exceptions thrown by a call to
+        /// <see cref="IState.EnterAsync"/> of the initial state.
+        /// </summary>
+        /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+        [Fact]
+        public static async Task DisposesStatesCorrectlyIfInitialStateThrowsInEnter()
+        {
+            var machine = new StateMachine();
+
+            var callSequence = new MockSequence();
+            var adapterMock = new Mock<IStateVerificationAdapter>();
+            adapterMock.InSequence(callSequence).Setup(m => m.EnterAsync<AsyncDisposableThrowingInInitialEnter.A>());
+            adapterMock.InSequence(callSequence).Setup(m => m.DisposeAsync<AsyncDisposableThrowingInInitialEnter.A>());
+
+            var initialState = new AsyncDisposableThrowingInInitialEnter.A(adapterMock.Object) { Controller = machine };
+
+            await Assert.ThrowsAsync<CoercedException>(async () => await machine.RunAsync(initialState));
+
+            adapterMock.Verify(m => m.EnterAsync<AsyncDisposableThrowingInInitialEnter.A>(), Times.Once);
+            adapterMock.Verify(m => m.TransitAsync<AsyncDisposableThrowingInInitialEnter.A, AsyncDisposableThrowingInInitialEnter.B>(), Times.Never);
+            adapterMock.Verify(m => m.ExitAsync<AsyncDisposableThrowingInInitialEnter.A>(), Times.Never);
+            adapterMock.Verify(m => m.DisposeAsync<AsyncDisposableThrowingInInitialEnter.A>(), Times.Once);
+            adapterMock.Verify(m => m.EnterAsync<AsyncDisposableThrowingInInitialEnter.B>(), Times.Never);
+            adapterMock.Verify(m => m.ExitAsync<AsyncDisposableThrowingInInitialEnter.B>(), Times.Never);
+            adapterMock.Verify(m => m.DisposeAsync<AsyncDisposableThrowingInInitialEnter.B>(), Times.Never);
+        }
+
+        /// <summary>
+        /// Tests whether states are disposed of correctly for errors returned by a call to
+        /// <see cref="IState.EnterAsync"/> of the initial state.
+        /// </summary>
+        /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+        [Fact]
+        public static async Task DisposesStatesCorrectlyIfInitialStateReturnsErrorFromEnter()
+        {
+            var machine = new StateMachine();
+
+            var callSequence = new MockSequence();
+            var adapterMock = new Mock<IStateVerificationAdapter>();
+            adapterMock.InSequence(callSequence).Setup(m => m.EnterAsync<AsyncDisposableErrorReturningInInitialEnter.A>());
+            adapterMock.InSequence(callSequence).Setup(m => m.DisposeAsync<AsyncDisposableErrorReturningInInitialEnter.A>());
+
+            var initialState = new AsyncDisposableErrorReturningInInitialEnter.A(adapterMock.Object) { Controller = machine };
+
+            var result = await machine.RunAsync(initialState);
+            Assert.False(result.IsSuccess);
+            Assert.IsType<CoercedError>(result.Error);
+
+            adapterMock.Verify(m => m.EnterAsync<AsyncDisposableErrorReturningInInitialEnter.A>(), Times.Once);
+            adapterMock.Verify(m => m.TransitAsync<AsyncDisposableErrorReturningInInitialEnter.A, AsyncDisposableErrorReturningInInitialEnter.B>(), Times.Never);
+            adapterMock.Verify(m => m.ExitAsync<AsyncDisposableErrorReturningInInitialEnter.A>(), Times.Never);
+            adapterMock.Verify(m => m.DisposeAsync<AsyncDisposableErrorReturningInInitialEnter.A>(), Times.Once);
+            adapterMock.Verify(m => m.EnterAsync<AsyncDisposableErrorReturningInInitialEnter.B>(), Times.Never);
+            adapterMock.Verify(m => m.ExitAsync<AsyncDisposableErrorReturningInInitialEnter.B>(), Times.Never);
+            adapterMock.Verify(m => m.DisposeAsync<AsyncDisposableErrorReturningInInitialEnter.B>(), Times.Never);
+        }
+
+        /// <summary>
+        /// Tests whether states are disposed of correctly for exceptions thrown by a call to
+        /// <see cref="IState.EnterAsync"/>.
+        /// </summary>
+        /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+        [Fact]
+        public static async Task DisposesStatesCorrectlyIfStateThrowsInEnter()
+        {
+            var machine = new StateMachine();
+
+            var callSequence = new MockSequence();
+            var adapterMock = new Mock<IStateVerificationAdapter>();
+            adapterMock.InSequence(callSequence).Setup(m => m.EnterAsync<AsyncDisposableThrowingInEnter.A>());
+            adapterMock.InSequence(callSequence).Setup(m => m.TransitAsync<AsyncDisposableThrowingInEnter.A, AsyncDisposableThrowingInEnter.B>());
+            adapterMock.InSequence(callSequence).Setup(m => m.ExitAsync<AsyncDisposableThrowingInEnter.A>());
+            adapterMock.InSequence(callSequence).Setup(m => m.DisposeAsync<AsyncDisposableThrowingInEnter.A>());
+            adapterMock.InSequence(callSequence).Setup(m => m.EnterAsync<AsyncDisposableThrowingInEnter.B>());
+            adapterMock.InSequence(callSequence).Setup(m => m.DisposeAsync<AsyncDisposableThrowingInEnter.B>());
+
+            var initialState = new AsyncDisposableThrowingInEnter.A(adapterMock.Object) { Controller = machine };
+
+            await Assert.ThrowsAsync<CoercedException>(async () => await machine.RunAsync(initialState));
+
+            adapterMock.Verify(m => m.EnterAsync<AsyncDisposableThrowingInEnter.A>(), Times.Once);
+            adapterMock.Verify(m => m.TransitAsync<AsyncDisposableThrowingInEnter.A, AsyncDisposableThrowingInEnter.B>(), Times.Once);
+            adapterMock.Verify(m => m.ExitAsync<AsyncDisposableThrowingInEnter.A>(), Times.Once);
+            adapterMock.Verify(m => m.DisposeAsync<AsyncDisposableThrowingInEnter.A>(), Times.Once);
+            adapterMock.Verify(m => m.EnterAsync<AsyncDisposableThrowingInEnter.B>(), Times.Once);
+            adapterMock.Verify(m => m.ExitAsync<AsyncDisposableThrowingInEnter.B>(), Times.Never);
+            adapterMock.Verify(m => m.DisposeAsync<AsyncDisposableThrowingInEnter.B>(), Times.Once);
+        }
+
+        /// <summary>
+        /// Tests whether states are disposed of correctly for errors returned by a call to
+        /// <see cref="IState.EnterAsync"/>.
+        /// </summary>
+        /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+        [Fact]
+        public static async Task DisposesStatesCorrectlyIfStateReturnsErrorFromEnter()
+        {
+            var machine = new StateMachine();
+
+            var callSequence = new MockSequence();
+            var adapterMock = new Mock<IStateVerificationAdapter>();
+            adapterMock.InSequence(callSequence).Setup(m => m.EnterAsync<AsyncDisposableErrorReturningInEnter.A>());
+            adapterMock.InSequence(callSequence).Setup(m => m.TransitAsync<AsyncDisposableErrorReturningInEnter.A, AsyncDisposableErrorReturningInEnter.B>());
+            adapterMock.InSequence(callSequence).Setup(m => m.ExitAsync<AsyncDisposableErrorReturningInEnter.A>());
+            adapterMock.InSequence(callSequence).Setup(m => m.DisposeAsync<AsyncDisposableErrorReturningInEnter.A>());
+            adapterMock.InSequence(callSequence).Setup(m => m.EnterAsync<AsyncDisposableErrorReturningInEnter.B>());
+            adapterMock.InSequence(callSequence).Setup(m => m.DisposeAsync<AsyncDisposableErrorReturningInEnter.B>());
+
+            var initialState = new AsyncDisposableErrorReturningInEnter.A(adapterMock.Object) { Controller = machine };
+
+            var result = await machine.RunAsync(initialState);
+            Assert.False(result.IsSuccess);
+            Assert.IsType<CoercedError>(result.Error);
+
+            adapterMock.Verify(m => m.EnterAsync<AsyncDisposableErrorReturningInEnter.A>(), Times.Once);
+            adapterMock.Verify(m => m.TransitAsync<AsyncDisposableErrorReturningInEnter.A, AsyncDisposableErrorReturningInEnter.B>(), Times.Once);
+            adapterMock.Verify(m => m.ExitAsync<AsyncDisposableErrorReturningInEnter.A>(), Times.Once);
+            adapterMock.Verify(m => m.DisposeAsync<AsyncDisposableErrorReturningInEnter.A>(), Times.Once);
+            adapterMock.Verify(m => m.EnterAsync<AsyncDisposableErrorReturningInEnter.B>(), Times.Once);
+            adapterMock.Verify(m => m.ExitAsync<AsyncDisposableErrorReturningInEnter.B>(), Times.Never);
+            adapterMock.Verify(m => m.DisposeAsync<AsyncDisposableErrorReturningInEnter.B>(), Times.Once);
+        }
+
+        /// <summary>
+        /// Tests whether states are disposed of correctly for exceptions thrown by a call to
+        /// <see cref="IState.ExitAsync"/>.
+        /// </summary>
+        /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+        [Fact]
+        public static async Task DisposesStatesCorrectlyIfStateThrowsInExit()
+        {
+            var machine = new StateMachine();
+
+            var callSequence = new MockSequence();
+            var adapterMock = new Mock<IStateVerificationAdapter>();
+            adapterMock.InSequence(callSequence).Setup(m => m.EnterAsync<AsyncDisposableThrowingInExit.A>());
+            adapterMock.InSequence(callSequence).Setup(m => m.TransitAsync<AsyncDisposableThrowingInExit.A, AsyncDisposableThrowingInExit.B>());
+            adapterMock.InSequence(callSequence).Setup(m => m.ExitAsync<AsyncDisposableThrowingInExit.A>());
+            adapterMock.InSequence(callSequence).Setup(m => m.DisposeAsync<AsyncDisposableThrowingInExit.A>());
+
+            var initialState = new AsyncDisposableThrowingInExit.A(adapterMock.Object) { Controller = machine };
+
+            await Assert.ThrowsAsync<CoercedException>(async () => await machine.RunAsync(initialState));
+
+            adapterMock.Verify(m => m.EnterAsync<AsyncDisposableThrowingInExit.A>(), Times.Once);
+            adapterMock.Verify(m => m.TransitAsync<AsyncDisposableThrowingInExit.A, AsyncDisposableThrowingInExit.B>(), Times.Once);
+            adapterMock.Verify(m => m.ExitAsync<AsyncDisposableThrowingInExit.A>(), Times.Once);
+            adapterMock.Verify(m => m.DisposeAsync<AsyncDisposableThrowingInExit.A>(), Times.Once);
+            adapterMock.Verify(m => m.EnterAsync<AsyncDisposableThrowingInExit.B>(), Times.Never);
+            adapterMock.Verify(m => m.ExitAsync<AsyncDisposableThrowingInExit.B>(), Times.Never);
+        }
+
+        /// <summary>
+        /// Tests whether states are disposed of correctly for errors returned by a call to
+        /// <see cref="IState.ExitAsync"/>.
+        /// </summary>
+        /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+        [Fact]
+        public static async Task DisposesStatesCorrectlyIfStateReturnsErrorExit()
+        {
+            var machine = new StateMachine();
+
+            var callSequence = new MockSequence();
+            var adapterMock = new Mock<IStateVerificationAdapter>();
+            adapterMock.InSequence(callSequence).Setup(m => m.EnterAsync<AsyncDisposableErrorReturningInExit.A>());
+            adapterMock.InSequence(callSequence).Setup(m => m.TransitAsync<AsyncDisposableErrorReturningInExit.A, AsyncDisposableErrorReturningInExit.B>());
+            adapterMock.InSequence(callSequence).Setup(m => m.ExitAsync<AsyncDisposableErrorReturningInExit.A>());
+            adapterMock.InSequence(callSequence).Setup(m => m.DisposeAsync<AsyncDisposableErrorReturningInExit.A>());
+
+            var initialState = new AsyncDisposableErrorReturningInExit.A(adapterMock.Object) { Controller = machine };
+
+            var result = await machine.RunAsync(initialState);
+            Assert.False(result.IsSuccess);
+            Assert.IsType<CoercedError>(result.Error);
+
+            adapterMock.Verify(m => m.EnterAsync<AsyncDisposableErrorReturningInExit.A>(), Times.Once);
+            adapterMock.Verify(m => m.TransitAsync<AsyncDisposableErrorReturningInExit.A, AsyncDisposableErrorReturningInExit.B>(), Times.Once);
+            adapterMock.Verify(m => m.ExitAsync<AsyncDisposableErrorReturningInExit.A>(), Times.Once);
+            adapterMock.Verify(m => m.DisposeAsync<AsyncDisposableErrorReturningInExit.A>(), Times.Once);
+            adapterMock.Verify(m => m.EnterAsync<AsyncDisposableErrorReturningInExit.B>(), Times.Never);
+            adapterMock.Verify(m => m.ExitAsync<AsyncDisposableErrorReturningInExit.B>(), Times.Never);
+        }
+
+        /// <summary>
+        /// Tests whether states are disposed of correctly for exceptions thrown by a call to
+        /// <see cref="IState.ExitAsync"/> of the final state.
+        /// </summary>
+        /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+        [Fact]
+        public static async Task DisposesStatesCorrectlyIfStateThrowsInFinalExit()
+        {
+            var machine = new StateMachine();
+
+            var callSequence = new MockSequence();
+            var adapterMock = new Mock<IStateVerificationAdapter>();
+            adapterMock.InSequence(callSequence).Setup(m => m.EnterAsync<AsyncDisposableThrowingInFinalExit.A>());
+            adapterMock.InSequence(callSequence).Setup(m => m.TransitAsync<AsyncDisposableThrowingInFinalExit.A, AsyncDisposableThrowingInFinalExit.B>());
+            adapterMock.InSequence(callSequence).Setup(m => m.ExitAsync<AsyncDisposableThrowingInFinalExit.A>());
+            adapterMock.InSequence(callSequence).Setup(m => m.DisposeAsync<AsyncDisposableThrowingInFinalExit.A>());
+            adapterMock.InSequence(callSequence).Setup(m => m.EnterAsync<AsyncDisposableThrowingInFinalExit.B>());
+            adapterMock.InSequence(callSequence).Setup(m => m.ExitAsync<AsyncDisposableThrowingInFinalExit.B>());
+            adapterMock.InSequence(callSequence).Setup(m => m.DisposeAsync<AsyncDisposableThrowingInFinalExit.B>());
+
+            var initialState = new AsyncDisposableThrowingInFinalExit.A(adapterMock.Object) { Controller = machine };
+
+            await Assert.ThrowsAsync<CoercedException>(async () => await machine.RunAsync(initialState));
+
+            adapterMock.Verify(m => m.EnterAsync<AsyncDisposableThrowingInFinalExit.A>(), Times.Once);
+            adapterMock.Verify(m => m.TransitAsync<AsyncDisposableThrowingInFinalExit.A, AsyncDisposableThrowingInFinalExit.B>(), Times.Once);
+            adapterMock.Verify(m => m.ExitAsync<AsyncDisposableThrowingInFinalExit.A>(), Times.Once);
+            adapterMock.Verify(m => m.DisposeAsync<AsyncDisposableThrowingInFinalExit.A>(), Times.Once);
+            adapterMock.Verify(m => m.EnterAsync<AsyncDisposableThrowingInFinalExit.B>(), Times.Once);
+            adapterMock.Verify(m => m.ExitAsync<AsyncDisposableThrowingInFinalExit.B>(), Times.Once);
+            adapterMock.Verify(m => m.DisposeAsync<AsyncDisposableThrowingInFinalExit.B>(), Times.Once);
+        }
+
+        /// <summary>
+        /// Tests whether states are disposed of correctly for errors returned by a call to
+        /// <see cref="IState.ExitAsync"/> of the final state.
+        /// </summary>
+        /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+        [Fact]
+        public static async Task DisposesStatesCorrectlyIfStateReturnsErrorInFinalExit()
+        {
+            var machine = new StateMachine();
+
+            var callSequence = new MockSequence();
+            var adapterMock = new Mock<IStateVerificationAdapter>();
+            adapterMock.InSequence(callSequence).Setup(m => m.EnterAsync<AsyncDisposableErrorReturningInFinalExit.A>());
+            adapterMock.InSequence(callSequence).Setup(m => m.TransitAsync<AsyncDisposableErrorReturningInFinalExit.A, AsyncDisposableErrorReturningInFinalExit.B>());
+            adapterMock.InSequence(callSequence).Setup(m => m.ExitAsync<AsyncDisposableErrorReturningInFinalExit.A>());
+            adapterMock.InSequence(callSequence).Setup(m => m.DisposeAsync<AsyncDisposableErrorReturningInFinalExit.A>());
+            adapterMock.InSequence(callSequence).Setup(m => m.EnterAsync<AsyncDisposableErrorReturningInFinalExit.B>());
+            adapterMock.InSequence(callSequence).Setup(m => m.ExitAsync<AsyncDisposableErrorReturningInFinalExit.B>());
+            adapterMock.InSequence(callSequence).Setup(m => m.DisposeAsync<AsyncDisposableErrorReturningInFinalExit.B>());
+
+            var initialState = new AsyncDisposableErrorReturningInFinalExit.A(adapterMock.Object) { Controller = machine };
+
+            var result = await machine.RunAsync(initialState);
+            Assert.False(result.IsSuccess);
+            Assert.IsType<CoercedError>(result.Error);
+
+            adapterMock.Verify(m => m.EnterAsync<AsyncDisposableErrorReturningInFinalExit.A>(), Times.Once);
+            adapterMock.Verify(m => m.TransitAsync<AsyncDisposableErrorReturningInFinalExit.A, AsyncDisposableErrorReturningInFinalExit.B>(), Times.Once);
+            adapterMock.Verify(m => m.ExitAsync<AsyncDisposableErrorReturningInFinalExit.A>(), Times.Once);
+            adapterMock.Verify(m => m.DisposeAsync<AsyncDisposableErrorReturningInFinalExit.A>(), Times.Once);
+            adapterMock.Verify(m => m.EnterAsync<AsyncDisposableErrorReturningInFinalExit.B>(), Times.Once);
+            adapterMock.Verify(m => m.ExitAsync<AsyncDisposableErrorReturningInFinalExit.B>(), Times.Once);
+            adapterMock.Verify(m => m.DisposeAsync<AsyncDisposableErrorReturningInFinalExit.B>(), Times.Once);
+        }
+
+        /// <summary>
+        /// Tests whether states are disposed of correctly for exceptions thrown by a call to
+        /// <see cref="ITransition{TState}.TransitAsync"/>.
+        /// </summary>
+        /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+        [Fact]
+        public static async Task DisposesStatesCorrectlyIfStateThrowsInTransition()
+        {
+            var machine = new StateMachine();
+
+            var callSequence = new MockSequence();
+            var adapterMock = new Mock<IStateVerificationAdapter>();
+            adapterMock.InSequence(callSequence).Setup(m => m.EnterAsync<AsyncDisposableThrowingInTransition.A>());
+            adapterMock.InSequence(callSequence).Setup(m => m.TransitAsync<AsyncDisposableThrowingInTransition.A, AsyncDisposableThrowingInTransition.B>());
+            adapterMock.InSequence(callSequence).Setup(m => m.ExitAsync<AsyncDisposableThrowingInTransition.A>());
+            adapterMock.InSequence(callSequence).Setup(m => m.DisposeAsync<AsyncDisposableThrowingInTransition.A>());
+            adapterMock.InSequence(callSequence).Setup(m => m.EnterAsync<AsyncDisposableThrowingInTransition.B>());
+            adapterMock.InSequence(callSequence).Setup(m => m.ExitAsync<AsyncDisposableThrowingInTransition.B>());
+            adapterMock.InSequence(callSequence).Setup(m => m.DisposeAsync<AsyncDisposableThrowingInTransition.B>());
+
+            var initialState = new AsyncDisposableThrowingInTransition.A(adapterMock.Object) { Controller = machine };
+
+            await Assert.ThrowsAsync<CoercedException>(async () => await machine.RunAsync(initialState));
+
+            adapterMock.Verify(m => m.EnterAsync<AsyncDisposableThrowingInTransition.A>(), Times.Once);
+            adapterMock.Verify(m => m.TransitAsync<AsyncDisposableThrowingInTransition.A, AsyncDisposableThrowingInTransition.B>(), Times.Once);
+            adapterMock.Verify(m => m.ExitAsync<AsyncDisposableThrowingInTransition.A>(), Times.Never);
+            adapterMock.Verify(m => m.DisposeAsync<AsyncDisposableThrowingInTransition.A>(), Times.Once);
+            adapterMock.Verify(m => m.EnterAsync<AsyncDisposableThrowingInTransition.B>(), Times.Never);
+            adapterMock.Verify(m => m.ExitAsync<AsyncDisposableThrowingInTransition.B>(), Times.Never);
+            adapterMock.Verify(m => m.DisposeAsync<AsyncDisposableThrowingInTransition.B>(), Times.Never);
+        }
+
+        /// <summary>
+        /// Tests whether states are disposed of correctly for errors returned by a call to
+        /// <see cref="ITransition{TState}.TransitAsync"/>.
+        /// </summary>
+        /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+        [Fact]
+        public static async Task DisposesStatesCorrectlyIfStateReturnsErrorInTransition()
+        {
+            var machine = new StateMachine();
+
+            var callSequence = new MockSequence();
+            var adapterMock = new Mock<IStateVerificationAdapter>();
+            adapterMock.InSequence(callSequence).Setup(m => m.EnterAsync<AsyncDisposableErrorReturningInTransition.A>());
+            adapterMock.InSequence(callSequence).Setup(m => m.TransitAsync<AsyncDisposableErrorReturningInTransition.A, AsyncDisposableErrorReturningInTransition.B>());
+            adapterMock.InSequence(callSequence).Setup(m => m.ExitAsync<AsyncDisposableErrorReturningInTransition.A>());
+            adapterMock.InSequence(callSequence).Setup(m => m.DisposeAsync<AsyncDisposableErrorReturningInTransition.A>());
+            adapterMock.InSequence(callSequence).Setup(m => m.EnterAsync<AsyncDisposableErrorReturningInTransition.B>());
+            adapterMock.InSequence(callSequence).Setup(m => m.ExitAsync<AsyncDisposableErrorReturningInTransition.B>());
+            adapterMock.InSequence(callSequence).Setup(m => m.DisposeAsync<AsyncDisposableErrorReturningInTransition.B>());
+
+            var initialState = new AsyncDisposableErrorReturningInTransition.A(adapterMock.Object) { Controller = machine };
+
+            var result = await machine.RunAsync(initialState);
+            Assert.False(result.IsSuccess);
+            Assert.IsType<CoercedError>(result.Error);
+
+            adapterMock.Verify(m => m.EnterAsync<AsyncDisposableErrorReturningInTransition.A>(), Times.Once);
+            adapterMock.Verify(m => m.TransitAsync<AsyncDisposableErrorReturningInTransition.A, AsyncDisposableErrorReturningInTransition.B>(), Times.Once);
+            adapterMock.Verify(m => m.ExitAsync<AsyncDisposableErrorReturningInTransition.A>(), Times.Never);
+            adapterMock.Verify(m => m.DisposeAsync<AsyncDisposableErrorReturningInTransition.A>(), Times.Once);
+            adapterMock.Verify(m => m.EnterAsync<AsyncDisposableErrorReturningInTransition.B>(), Times.Never);
+            adapterMock.Verify(m => m.ExitAsync<AsyncDisposableErrorReturningInTransition.B>(), Times.Never);
+            adapterMock.Verify(m => m.DisposeAsync<AsyncDisposableErrorReturningInTransition.B>(), Times.Never);
         }
     }
 }
