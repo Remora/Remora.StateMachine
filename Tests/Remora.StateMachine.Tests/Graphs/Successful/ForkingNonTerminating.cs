@@ -4,7 +4,6 @@
 //  SPDX-License-Identifier: LGPL-3.0-or-later
 //
 
-using System;
 using System.Threading;
 using System.Threading.Tasks;
 using Remora.Results;
@@ -34,7 +33,6 @@ public static class ForkingNonTerminating
             async Task TransitTask()
             {
                 await Task.Yield();
-                await Task.Delay(TimeSpan.FromSeconds(1), ct);
 
                 this.Controller.RequestTransit<B>();
             }

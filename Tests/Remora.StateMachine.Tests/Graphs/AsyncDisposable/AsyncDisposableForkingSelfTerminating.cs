@@ -35,7 +35,6 @@ public static class AsyncDisposableForkingSelfTerminating
             async Task TransitTask()
             {
                 await Task.Yield();
-                await Task.Delay(TimeSpan.FromSeconds(1), ct);
 
                 this.Controller.RequestTransit<B>();
             }
@@ -88,7 +87,6 @@ public static class AsyncDisposableForkingSelfTerminating
             async Task ExitTask()
             {
                 await Task.Yield();
-                await Task.Delay(TimeSpan.FromSeconds(1), ct);
 
                 this.Controller.RequestExit();
             }

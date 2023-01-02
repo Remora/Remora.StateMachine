@@ -36,7 +36,6 @@ public static class DisposableAndAsyncDisposableForkingNonTerminating
             async Task TransitTask()
             {
                 await Task.Yield();
-                await Task.Delay(TimeSpan.FromSeconds(1), ct);
 
                 this.Controller.RequestTransit<B>();
             }
