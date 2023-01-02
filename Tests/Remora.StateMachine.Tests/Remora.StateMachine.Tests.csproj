@@ -1,0 +1,11 @@
+<Project Sdk="Remora.Tests.Sdk">
+  <ItemGroup>
+    <ProjectReference Include="..\..\Remora.StateMachine\Remora.StateMachine.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Moq" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Graphs\Cancelling" />
+  </ItemGroup>
+</Project>

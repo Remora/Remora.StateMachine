@@ -1,0 +1,11 @@
+<Project>
+  <PropertyGroup>
+    <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageVersion Include="Moq" Version="4.18.4" />
+    <PackageVersion Include="Remora.Results" Version="7.2.3" />
+    <PackageVersion Include="Remora.Results.Analyzers" Version="1.0.0" />
+    <PackageVersion Include="Required" Version="1.0.0" />
+  </ItemGroup>
+</Project>
