@@ -1,0 +1,5 @@
+<Project Sdk="Remora.Sdk">
+  <ItemGroup>
+    <PackageReference Include="Remora.Results" />
+  </ItemGroup>
+</Project>

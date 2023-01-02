@@ -1,0 +1,36 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Remora.StateMachine", "Remora.StateMachine\Remora.StateMachine.csproj", "{6170C7B2-451C-4BB3-B853-D3BE1B70E302}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "metadata", "metadata", "{71215095-DA58-4F95-B5AE-1BE54F6107B8}"
+	ProjectSection(SolutionItems) = preProject
+		Directory.Build.props = Directory.Build.props
+		Directory.Packages.props = Directory.Packages.props
+		global.json = global.json
+		.gitignore = .gitignore
+		README.md = README.md
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tests", "Tests", "{449330E8-0D3B-43A6-B48F-05D65FB76591}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Remora.StateMachine.Tests", "Tests\Remora.StateMachine.Tests\Remora.StateMachine.Tests.csproj", "{B3B20B1E-E0C1-4A1F-8A47-C44F00C8C335}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{6170C7B2-451C-4BB3-B853-D3BE1B70E302}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6170C7B2-451C-4BB3-B853-D3BE1B70E302}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6170C7B2-451C-4BB3-B853-D3BE1B70E302}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6170C7B2-451C-4BB3-B853-D3BE1B70E302}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B3B20B1E-E0C1-4A1F-8A47-C44F00C8C335}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B3B20B1E-E0C1-4A1F-8A47-C44F00C8C335}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B3B20B1E-E0C1-4A1F-8A47-C44F00C8C335}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B3B20B1E-E0C1-4A1F-8A47-C44F00C8C335}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{B3B20B1E-E0C1-4A1F-8A47-C44F00C8C335} = {449330E8-0D3B-43A6-B48F-05D65FB76591}
+	EndGlobalSection
+EndGlobal
